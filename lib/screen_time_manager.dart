@@ -5,10 +5,16 @@ class ScreenTimeManager extends ScreenTimeInterface {
   @visibleForTesting
   final methodChannel = const MethodChannel('basis_screen_time');
 
+  @override
   Future<bool> requestAuthorization() async => await methodChannel
       .invokeMethod(ScreenTimeMethod.requestAuthorization.name);
 
   @override
-  Future<void> presentActivitySelector() async => await methodChannel
-      .invokeMethod(ScreenTimeMethod.presentActivitySelector.name);
+  Future<void> scheduleApplicationBlocking(
+    ScreenTimeBlockSchedule schedule,
+  ) async =>
+      await methodChannel.invokeMethod(
+        ScreenTimeMethod.scheduleApplicationBlocking.name,
+        schedule.toJson(),
+      );
 }

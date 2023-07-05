@@ -18,6 +18,12 @@ class ExampleApp extends StatefulWidget {
 class _ExampleAppState extends State<ExampleApp> {
   bool _authorized = false;
   final _manager = ScreenTimeManager.instance;
+  final schedule = ScreenTimeBlockSchedule(
+    id: 'default',
+    startTime: DateTime.now(),
+    endTime: DateTime.now().add(const Duration(minutes: 30)),
+    repeats: true,
+  );
 
   @override
   void initState() {
@@ -31,7 +37,9 @@ class _ExampleAppState extends State<ExampleApp> {
       home: Scaffold(
         body: Center(
           child: TextButton(
-            onPressed: ScreenTimeManager.instance.presentActivitySelector,
+            onPressed: () {
+              ScreenTimeManager.instance.scheduleApplicationBlocking(schedule);
+            },
             child: Text('Select Applications to Block'),
           ),
         ),

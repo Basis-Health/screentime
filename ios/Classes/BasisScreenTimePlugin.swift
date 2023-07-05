@@ -20,27 +20,42 @@ public class BasisScreenTimePlugin: NSObject, FlutterPlugin {
         else { return }
         
         switch method {
-        case .presentActivitySelector: presentActivitySelector(result: result)
+        case .scheduleApplicationBlocking: scheduleApplicationBlocking(
+            call: call, result: result
+        )
         case .requestAuthorization: requestAuthorization(result: result)
         }
     }
     
     @available(iOS 16.0, *)
-    private func presentActivitySelector(result: @escaping FlutterResult) {
+    private func scheduleApplicationBlocking(
+        call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
+        guard let arguments = call.arguments as? NSDictionary else { return }
+        let schedule = STBlockSchedule(dict: arguments)
+        presentActivitySelector(schedule: schedule, result: result)
+    }
+    
+    @available(iOS 16.0, *)
+    private func presentActivitySelector(
+        schedule: STBlockSchedule,
+        result: @escaping FlutterResult
+    ) {
         if let rootController = UIApplication.shared.keyWindow?.rootViewController {
             var controller: UIViewController! = rootController
             while( controller.presentedViewController != nil ) {
                 controller = controller.presentedViewController
             }
-            let schedule = DeviceActivitySchedule(
+            let activity = DeviceActivitySchedule(
                 intervalStart: DateComponents(hour: 8, minute: 0, second: 0),
                 intervalEnd: DateComponents(hour: 12, minute: 4, second: 0),
-                repeats: true
+                repeats: schedule.repeats
             )
             let hostingController = UIHostingController(
                 rootView: ActivitySelectionView(
-                    group: "default",
-                    schedule: schedule
+                    group: schedule.id,
+                    schedule: activity
                 )
             )
             controller.present(hostingController, animated: true)

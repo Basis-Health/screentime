@@ -2,10 +2,11 @@ part of screen_time;
 
 abstract class ScreenTimeInterface {
   Future<bool> requestAuthorization();
-  Future<void> presentActivitySelector();
+
+  Future<void> scheduleApplicationBlocking(ScreenTimeBlockSchedule schedule);
 }
 
 enum ScreenTimeMethod {
   requestAuthorization,
-  presentActivitySelector;
+  scheduleApplicationBlocking;
 }
