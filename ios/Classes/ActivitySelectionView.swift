@@ -13,17 +13,18 @@ import ManagedSettings
 
 @available(iOS 16.0, *)
 struct ActivitySelectionView: View {
-    private let key: String
     let group: String
     let schedule: DeviceActivitySchedule
+    let onSaved: () -> Void
     @State private var selection: FamilyActivitySelection
+    private var service: DeviceActivityService { DeviceActivityService.shared }
     
-    init(group: String, schedule: DeviceActivitySchedule) {
-        let key = "device_activity_\(group)"
-        self.key = key
+    init(group: String, schedule: DeviceActivitySchedule, onSaved: @escaping () -> Void) {
         self.group = group
         self.schedule = schedule
+        let key = DeviceActivityName.fromId(group).rawValue
         self._selection = .init(initialValue: .fromKey(key))
+        self.onSaved = onSaved
     }
     
     var body: some View {
@@ -48,21 +49,45 @@ struct ActivitySelectionView: View {
     func saveSelection() {
         do {
             let data = try JSONEncoder().encode(selection)
-            UserDefaults.group()?.setValue(data, forKey: key)
+            UserDefaults.group()?.setValue(
+                data,
+                forKey: DeviceActivityName.fromId(group).rawValue
+            )
             startMonitoring()
+            onSaved()
         } catch {
             print(error)
         }
     }
     
     private func startMonitoring() {
-        let center = DeviceActivityCenter()
+        service.startMonitoring(id: group, schedule: schedule)
+    }
+}
+
+@available(iOS 16.0, *)
+class DeviceActivityService {
+    static let shared = DeviceActivityService()
+    private let center = DeviceActivityCenter()
+    
+    func startMonitoring(id: String, schedule: DeviceActivitySchedule) {
         do {
-            let activity = DeviceActivityName(key)
+            let activity = DeviceActivityName.fromId(id)
             try center.startMonitoring(activity, during: schedule)
         } catch {
             print(error)
         }
+    }
+    
+    func stopMonitoring(id: String) {
+        center.stopMonitoring([.fromId(id)])
+    }
+}
+
+@available(iOS 16.0, *)
+extension DeviceActivityName {
+    static func fromId(_ id: String) -> DeviceActivityName {
+        return DeviceActivityName("device_activity_\(id)")
     }
 }
 
@@ -82,9 +107,33 @@ extension FamilyActivitySelection {
 }
 
 extension UserDefaults {
+    private var activeSchedulesKey: String {
+        "active_schedules"
+    }
+
     static func group() -> UserDefaults? {
         return UserDefaults(
             suiteName: "group.J844EMD5AP.basis.controls"
         )
+    }
+
+    func getActiveSchedules() -> [STBlockSchedule] {
+        let decoder = JSONDecoder()
+        if let data = self.data(forKey: activeSchedulesKey),
+           let schedules = try? decoder.decode(
+            [STBlockSchedule].self,
+            from: data
+        ) {
+            return schedules
+        } else {
+            return []
+        }
+    }
+
+    func setActiveSchedules(_ schedules: [STBlockSchedule]) {
+        let encoder = JSONEncoder()
+        if let data = try? encoder.encode(schedules) {
+            self.setValue(data, forKey: activeSchedulesKey)
+        }
     }
 }

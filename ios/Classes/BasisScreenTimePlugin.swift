@@ -3,7 +3,6 @@ import SwiftUI
 import UIKit
 import FamilyControls
 import DeviceActivity
-import UserNotifications
 
 public class BasisScreenTimePlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -20,10 +19,21 @@ public class BasisScreenTimePlugin: NSObject, FlutterPlugin {
         else { return }
         
         switch method {
-        case .scheduleApplicationBlocking: scheduleApplicationBlocking(
-            call: call, result: result
-        )
+        case .activeSchedules: getActiveSchedules(result: result)
+        case .isOSSupported: result(isOSSupported())
+        case .permissionStatus: result(getPermissionStatus().rawValue)
+        case .scheduleApplicationBlocking:
+            scheduleApplicationBlocking(call: call, result: result)
         case .requestAuthorization: requestAuthorization(result: result)
+        case .deleteSchedule: deleteSchedule(call: call, result: result)
+        }
+    }
+    
+    private func isOSSupported() -> Bool {
+        if #available(iOS 16.0, *) {
+            return true
+        } else {
+            return false
         }
     }
     
@@ -55,7 +65,8 @@ public class BasisScreenTimePlugin: NSObject, FlutterPlugin {
             let hostingController = UIHostingController(
                 rootView: ActivitySelectionView(
                     group: schedule.id,
-                    schedule: activity
+                    schedule: activity,
+                    onSaved: { self.saveNewSchedule(schedule) }
                 )
             )
             controller.present(hostingController, animated: true)
@@ -68,11 +79,42 @@ public class BasisScreenTimePlugin: NSObject, FlutterPlugin {
             do {
                 let center = AuthorizationCenter.shared
                 try await center.requestAuthorization(for: .individual)
-                return center.authorizationStatus == .approved
+                let state = STPermissionState.fromStatus(status: center.authorizationStatus)
+                result(state.rawValue)
             } catch {
-                return false
+                print(error)
             }
         }
+    }
+    
+    @available(iOS 16.0, *)
+    private func getPermissionStatus() -> STPermissionState {
+        .fromStatus(status: AuthorizationCenter.shared.authorizationStatus)
+    }
+    
+    @available(iOS 16.0, *)
+    private func deleteSchedule(
+        call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
+        guard let arguments = call.arguments as? NSDictionary,
+              let id = arguments["id"] as? String else { return }
+        DeviceActivityService.shared.stopMonitoring(id: id)
+        var activeSchedules = UserDefaults.group()?.getActiveSchedules() ?? []
+        activeSchedules.removeAll(where: { $0.id == id })
+        UserDefaults.group()?.setActiveSchedules(activeSchedules)
+    }
+    
+    private func saveNewSchedule(_ schedule: STBlockSchedule) {
+        var activeSchedules = UserDefaults.group()?.getActiveSchedules() ?? []
+        activeSchedules.removeAll(where: { $0.id == schedule.id })
+        activeSchedules.append(schedule)
+        UserDefaults.group()?.setActiveSchedules(activeSchedules)
+    }
+    
+    func getActiveSchedules(result: @escaping FlutterResult) {
+        let schedules = UserDefaults.group()?.getActiveSchedules() ?? []
+        result(schedules.toData())
     }
 }
 

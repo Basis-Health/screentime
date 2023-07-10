@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -36,11 +38,29 @@ class _ExampleAppState extends State<ExampleApp> {
     return MaterialApp(
       home: Scaffold(
         body: Center(
-          child: TextButton(
-            onPressed: () {
-              ScreenTimeManager.instance.scheduleApplicationBlocking(schedule);
-            },
-            child: Text('Select Applications to Block'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () {
+                  ScreenTimeManager.instance
+                      .scheduleApplicationBlocking(schedule);
+                },
+                child: const Text('Select Applications to Block'),
+              ),
+              TextButton(
+                onPressed: _getActiveSchedules,
+                child: const Text('Log Active Schedule Length'),
+              ),
+              TextButton(
+                onPressed: () => _deleteSchedule(),
+                child: const Text('Delete Default Schedule'),
+              ),
+              TextButton(
+                onPressed: _getPermissionState,
+                child: const Text('Log Permission Status'),
+              ),
+            ],
           ),
         ),
       ),
@@ -49,6 +69,19 @@ class _ExampleAppState extends State<ExampleApp> {
 
   void _requestAuth() async {
     final result = await _manager.requestAuthorization();
-    setState(() => _authorized = result);
+  }
+
+  void _getActiveSchedules() async {
+    final result = await _manager.activeSchedules();
+    log(result.length.toString(), name: 'Active Schedules Length');
+  }
+
+  void _getPermissionState() async {
+    final result = await _manager.permissionStatus();
+    log(result.name, name: 'Permission Status');
+  }
+
+  void _deleteSchedule() async {
+    await _manager.deleteSchedule('default');
   }
 }

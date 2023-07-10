@@ -8,6 +8,10 @@
 import Foundation
 
 enum ScreenTimeMethod: String {
+    case isOSSupported
+    case permissionStatus
     case requestAuthorization
     case scheduleApplicationBlocking
+    case activeSchedules
+    case deleteSchedule
 }
