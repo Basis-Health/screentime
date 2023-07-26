@@ -1,7 +1,7 @@
 part of screen_time;
 
-class ScreenTimeManager extends ScreenTimeInterface {
-  static var instance = ScreenTimeManager();
+final class ScreenTimeManager extends ScreenTimeInterface {
+  static final instance = ScreenTimeManager();
   @visibleForTesting
   final methodChannel = const MethodChannel('basis_screen_time');
 

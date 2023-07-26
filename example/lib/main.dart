@@ -1,9 +1,6 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
 import 'package:basis_screen_time/screen_time.dart';
 
 void main() {
@@ -18,19 +15,42 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _ExampleAppState extends State<ExampleApp> {
-  bool _authorized = false;
+  ScreenTimePermissionState _authorized = ScreenTimePermissionState.notDetermined;
   final _manager = ScreenTimeManager.instance;
-  final schedule = ScreenTimeBlockSchedule(
-    id: 'default',
-    startTime: DateTime.now(),
-    endTime: DateTime.now().add(const Duration(minutes: 30)),
-    repeats: true,
-  );
+  late final ScreenTimeBlockSchedule _schedule;
 
   @override
   void initState() {
     super.initState();
+    final currentTime = DateTime.now();
+    _schedule = ScreenTimeBlockSchedule(
+      id: 'default',
+      startTime: Duration(hours: currentTime.hour, minutes: currentTime.minute),
+      endTime: Duration(hours: currentTime.hour + 1, minutes: currentTime.minute),
+      repeats: true,
+    );
     _requestAuth();
+  }
+
+  void _requestAuth() async {
+    final result = await _manager.requestAuthorization();
+    if (result != _authorized && mounted) {
+      setState(() => _authorized = result);
+    }
+  }
+
+  void _getActiveSchedules() async {
+    final result = await _manager.activeSchedules();
+    log(result.length.toString(), name: 'Active Schedules Length');
+  }
+
+  void _getPermissionState() async {
+    final result = await _manager.permissionStatus();
+    log(result.name, name: 'Permission Status');
+  }
+
+  void _deleteSchedule() async {
+    await _manager.deleteSchedule('default');
   }
 
   @override
@@ -44,7 +64,7 @@ class _ExampleAppState extends State<ExampleApp> {
               TextButton(
                 onPressed: () {
                   ScreenTimeManager.instance
-                      .scheduleApplicationBlocking(schedule);
+                      .scheduleApplicationBlocking(_schedule);
                 },
                 child: const Text('Select Applications to Block'),
               ),
@@ -67,21 +87,4 @@ class _ExampleAppState extends State<ExampleApp> {
     );
   }
 
-  void _requestAuth() async {
-    final result = await _manager.requestAuthorization();
-  }
-
-  void _getActiveSchedules() async {
-    final result = await _manager.activeSchedules();
-    log(result.length.toString(), name: 'Active Schedules Length');
-  }
-
-  void _getPermissionState() async {
-    final result = await _manager.permissionStatus();
-    log(result.name, name: 'Permission Status');
-  }
-
-  void _deleteSchedule() async {
-    await _manager.deleteSchedule('default');
-  }
 }
