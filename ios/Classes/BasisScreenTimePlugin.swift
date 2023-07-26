@@ -16,7 +16,7 @@ public class BasisScreenTimePlugin: NSObject, FlutterPlugin {
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard #available(iOS 16.0, *), let method = ScreenTimeMethod(rawValue: call.method)
-        else { return }
+        else { result("There was an error"); return }
         
         switch method {
         case .activeSchedules: getActiveSchedules(result: result)
@@ -103,6 +103,7 @@ public class BasisScreenTimePlugin: NSObject, FlutterPlugin {
         var activeSchedules = UserDefaults.group()?.getActiveSchedules() ?? []
         activeSchedules.removeAll(where: { $0.id == id })
         UserDefaults.group()?.setActiveSchedules(activeSchedules)
+        result(true)
     }
     
     private func saveNewSchedule(_ schedule: STBlockSchedule) {
