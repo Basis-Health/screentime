@@ -50,4 +50,12 @@ final class ScreenTimeManager extends ScreenTimeInterface {
     final data = (jsonDecode(jsonEncode(response)) as List);
     return data.map((e) => ScreenTimeBlockSchedule.fromJson(e)).toList();
   }
+
+  @override
+  Future<void> updateSchedule(ScreenTimeBlockSchedule schedule) async {
+    await methodChannel.invokeMethod(
+      ScreenTimeMethod.updateSchedule.name,
+      schedule.toJson(),
+    );
+  }
 }

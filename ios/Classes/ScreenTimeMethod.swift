@@ -14,4 +14,5 @@ enum ScreenTimeMethod: String {
     case scheduleApplicationBlocking
     case activeSchedules
     case deleteSchedule
+    case updateSchedule
 }

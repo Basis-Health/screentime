@@ -26,6 +26,7 @@ public class BasisScreenTimePlugin: NSObject, FlutterPlugin {
             scheduleApplicationBlocking(call: call, result: result)
         case .requestAuthorization: requestAuthorization(result: result)
         case .deleteSchedule: deleteSchedule(call: call, result: result)
+        case .updateSchedule: updateSchedule(call: call, result: result)
         }
     }
     
@@ -58,19 +59,43 @@ public class BasisScreenTimePlugin: NSObject, FlutterPlugin {
                 controller = controller.presentedViewController
             }
             let activity = DeviceActivitySchedule(
-                intervalStart: DateComponents(hour: 8, minute: 0, second: 0),
-                intervalEnd: DateComponents(hour: 12, minute: 4, second: 0),
+                intervalStart: schedule.startTime.toDateComponents(),
+                intervalEnd: schedule.endTime.toDateComponents(),
                 repeats: schedule.repeats
             )
             let hostingController = UIHostingController(
                 rootView: ActivitySelectionView(
                     group: schedule.id,
                     schedule: activity,
-                    onSaved: { self.saveNewSchedule(schedule) }
+                    onSaved: {
+                        self.saveNewSchedule(schedule)
+                        result(true)
+                    }
                 )
             )
             controller.present(hostingController, animated: true)
         }
+    }
+    
+    @available(iOS 16.0, *)
+    private func updateSchedule(
+        call: FlutterMethodCall,
+        result: @escaping FlutterResult
+    ) {
+        guard let arguments = call.arguments as? NSDictionary else { return }
+        let schedule = STBlockSchedule(dict: arguments)
+        let activity = DeviceActivitySchedule(
+            intervalStart: schedule.startTime.toDateComponents(),
+            intervalEnd: schedule.endTime.toDateComponents(),
+            repeats: schedule.repeats
+        )
+        DeviceActivityService.shared.stopMonitoring(id: schedule.id)
+        DeviceActivityService.shared.startMonitoring(
+            id: schedule.id,
+            schedule: activity
+        )
+        saveNewSchedule(schedule)
+        result(true)
     }
     
     @available(iOS 16.0, *)

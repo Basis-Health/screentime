@@ -20,6 +20,10 @@ struct STTimeComponent: Codable {
         self.minute = dict?["minute"] as? Int ?? 0
         self.second = dict?["second"] as? Int ?? 0
     }
+    
+    func toDateComponents() -> DateComponents {
+        DateComponents(hour: hour, minute: minute, second: second)
+    }
 }
 
 struct STBlockSchedule: Codable {

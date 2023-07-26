@@ -1,7 +1,6 @@
 part of screen_time;
 
 abstract class ScreenTimeInterface {
-
   Future<List<ScreenTimeBlockSchedule>> activeSchedules();
 
   Future<bool> isOSSupported();
@@ -13,6 +12,8 @@ abstract class ScreenTimeInterface {
   Future<void> scheduleApplicationBlocking(ScreenTimeBlockSchedule schedule);
 
   Future<void> deleteSchedule(String id);
+
+  Future<void> updateSchedule(ScreenTimeBlockSchedule schedule);
 }
 
 enum ScreenTimeMethod {
@@ -21,5 +22,6 @@ enum ScreenTimeMethod {
   requestAuthorization,
   scheduleApplicationBlocking,
   activeSchedules,
-  deleteSchedule;
+  deleteSchedule,
+  updateSchedule;
 }
